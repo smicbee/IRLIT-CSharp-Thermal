@@ -180,8 +180,7 @@ namespace ThermalViewer
         {
             stopLiveView();
 
-            double degree = (Convert.ToDouble(hScrollBar1.Value) / 100 * 180);
-            double rad = Convert.ToDouble(hScrollBar1.Value) / 100 * Math.PI;
+            double degree = hScrollBar1.Value;
 
             label1.Text = degree.ToString() + "°";
 
@@ -264,11 +263,6 @@ namespace ThermalViewer
             }
         }
 
-        private void button5_Click(object sender, EventArgs e)
-        {
-            doDarkCorrection();
-        }
-
         private async void button2_Click(object sender, EventArgs e)
         {
             stopLiveView();
@@ -287,9 +281,11 @@ namespace ThermalViewer
 
                     lockinResult = res;
 
+                    ConfigureLockInSlider();
                     hScrollBar1.Enabled = true;
+                    button3.Enabled = true;
                     button4.Enabled = true;
-                    button5.Enabled = true;
+                    updateLockinResultView();
 
 
                 }
@@ -300,17 +296,47 @@ namespace ThermalViewer
 
         private void button4_Click(object sender, EventArgs e)
         {
-            showImage(lockinResult.Accumulator.GetPhaseFrame(maskLowAmplitude:true,amplitudeThreshold:50).ToColorMappedImage((ThermalFrame.ColorMapType)comboBoxColorMap.SelectedItem));
+            if (lockinResult == null)
+            {
+                return;
+            }
+
+            try
+            {
+                showImage(lockinResult.Accumulator.GetPhaseFrame(maskLowAmplitude: true, amplitudeThreshold: 50).ToColorMappedImage((ThermalFrame.ColorMapType)comboBoxColorMap.SelectedItem));
+            }
+            catch
+            {
+                return;
+            }
 
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
+            if (lockinResult == null)
+            {
+                return;
+            }
+
             var amp = lockinResult.Accumulator.GetAmplitudeFrame();
             showImage(amp.ToColorMappedImage((ThermalFrame.ColorMapType)comboBoxColorMap.SelectedItem));
-
         }
 
+        private void button5_Click(object sender, EventArgs e)
+        {
+            doDarkCorrection();
+        }
+
+        private void ConfigureLockInSlider()
+        {
+            hScrollBar1.Minimum = 0;
+            hScrollBar1.Maximum = 360;
+            hScrollBar1.LargeChange = 1;
+            hScrollBar1.SmallChange = 1;
+            hScrollBar1.Value = 0;
+            label1.Text = "0°";
+        }
 
 
         private void showImage(Image img)
