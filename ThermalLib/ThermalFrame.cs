@@ -20,7 +20,7 @@ namespace ThermalCamLib
             MetaU16 = metaU16;
             MetaRows = Math.Max(0, metaRows);
             TimestampUtc = DateTime.UtcNow;
-        }
+         }
         public int MetaRows { get; }
         public int ImageHeight => Math.Max(0, Height - MetaRows);
 
@@ -30,6 +30,14 @@ namespace ThermalCamLib
 
         public int Width { get; }
         public int Height { get; }
+
+        public double  focusScore { 
+            get {
+                var score = FocusScoreVarianceOfLaplacian();
+                return score;         
+            }
+        }
+
         public DateTime TimestampUtc { get; }
 
         /// <summary>
@@ -79,6 +87,55 @@ namespace ThermalCamLib
                 gray[i] = (byte)(((RawU16[i] - min) * 255) / range);
 
             return Create8bppGrayscaleBitmap(gray, Width, outH);
+        }
+
+        private double FocusScoreVarianceOfLaplacian(int? metaRowsOverride = null, int stride = 2)
+        {
+            int cropRows = Math.Max(0, metaRowsOverride ?? MetaRows);
+            int h = Math.Max(0, Height - cropRows);
+            int w = Width;
+
+            if (RawU16 == null || RawU16.Length < w * h)
+                throw new InvalidOperationException("RawU16 fehlt oder ist zu kurz.");
+
+            // stride=2: nur jedes 2. Pixel (schneller), reicht meist völlig
+            int x0 = 1, y0 = 1;
+            int x1 = w - 1, y1 = h - 1;
+            if (x1 <= x0 || y1 <= y0) return 0;
+
+            double mean = 0;
+            double m2 = 0;
+            long n = 0;
+
+            // 4-neighbor Laplacian: L = (N + S + E + W) - 4*C
+            for (int y = y0; y < y1; y += stride)
+            {
+                int row = y * w;
+                int rowN = (y - 1) * w;
+                int rowS = (y + 1) * w;
+
+                for (int x = x0; x < x1; x += stride)
+                {
+                    int i = row + x;
+
+                    int c = RawU16[i];
+                    int lap =
+                        RawU16[rowN + x] +
+                        RawU16[rowS + x] +
+                        RawU16[row + (x - 1)] +
+                        RawU16[row + (x + 1)] -
+                        4 * c;
+
+                    // Online-Varianz (Welford)
+                    n++;
+                    double delta = lap - mean;
+                    mean += delta / n;
+                    m2 += delta * (lap - mean);
+                }
+            }
+
+            if (n < 2) return 0;
+            return m2 / (n - 1); // Varianz
         }
 
 

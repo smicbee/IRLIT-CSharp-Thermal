@@ -18,7 +18,9 @@ namespace ThermalCamLib.LockIn
     public sealed class LockInMeasurementRunner
     {
         private readonly ThermalCamera _camera;
-        private static volatile bool _stimulusOn;
+        private static bool _stimulusOn;
+        private int _frameCount;
+
 
         public LockInMeasurementRunner(ThermalCamera camera)
         {
@@ -37,9 +39,13 @@ namespace ThermalCamLib.LockIn
             int metaRows,
             double dutyCycle = 0.5,
             TimeSpan? settleBeforeStart = null,
-            Func<ThermalFrame, ThermalFrame> framePreprocess = null,     // z.B. DarkFieldCorrector.Apply
-            Func<ushort, double> xSelector = null,                       // z.B. raw=>raw oder raw->temp
+            Func<ThermalFrame, ThermalFrame> framePreprocess = null,
+            Func<ushort, double> xSelector = null,
+            TimeSpan? integrationTime = null, 
+            IProgress<LockInProgress> progress = null,
+            int progressIntervalMs = 100,
             CancellationToken ct = default)
+
         {
             if (stimulus == null) throw new ArgumentNullException(nameof(stimulus));
             if (frequencyHz <= 0) throw new ArgumentOutOfRangeException(nameof(frequencyHz));
@@ -54,11 +60,45 @@ namespace ThermalCamLib.LockIn
             // Zeitbasis
             var sw = Stopwatch.StartNew();
 
+            var progressTask = Task.Run(async () =>
+            {
+                if (progress == null) return;
+
+                while (!ct.IsCancellationRequested && sw.Elapsed < duration)
+                {
+                    progress.Report(new LockInProgress
+                    {
+                        Elapsed = sw.Elapsed,
+                        Total = duration,
+                        Frames = Volatile.Read(ref _frameCount),
+                        StimulusOn = _stimulusOn,
+                        FrequencyHz = frequencyHz
+                    });
+
+                    await Task.Delay(progressIntervalMs, ct).ConfigureAwait(false);
+                }
+
+                progress.Report(new LockInProgress
+                {
+                    Elapsed = duration,
+                    Total = duration,
+                    Frames = Volatile.Read(ref _frameCount),
+                    StimulusOn = _stimulusOn,
+                    FrequencyHz = frequencyHz
+                });
+            }, ct);
+
+
             // Optional settling (z.B. Kamera stabilisieren, Shutter öffnen etc.)
             if (settleBeforeStart.HasValue && settleBeforeStart.Value > TimeSpan.Zero)
                 await Task.Delay(settleBeforeStart.Value, ct);
 
             // Frame-Handler
+            _frameCount = 0;
+
+            int nPix = acc.PixelCount;
+            IntegrationBuffer ib = integrationTime.HasValue ? new IntegrationBuffer(nPix) : null;
+
             EventHandler<ThermalFrame> handler = null;
             handler = (s, frame) =>
             {
@@ -67,16 +107,51 @@ namespace ThermalCamLib.LockIn
                     if (framePreprocess != null)
                         frame = framePreprocess(frame);
 
-                    // Zeit in Sekunden
-                    double t = sw.Elapsed.TotalSeconds;
+                    if (ib == null)
+                    {
+                        // 🔹 bisheriges Verhalten
+                        double t = sw.Elapsed.TotalSeconds;
+                        acc.AddFrame(frame, t, _stimulusOn, xSelector);
+                        Interlocked.Increment(ref _frameCount);
+                        return;
+                    }
 
-                    acc.AddFrame(frame, t, _stimulusOn, xSelector);
+                    // 🔸 Integration aktiv
+                    int n = acc.PixelCount;
+                    for (int i = 0; i < n; i++)
+                        ib.Sum[i] += frame.RawU16[i];
+
+                    ib.Count++;
+
+                    var now = DateTime.UtcNow;
+                    if ((now - ib.T0) >= integrationTime.Value)
+                    {
+                        // Mittelwert-Frame bauen
+                        var raw = new ushort[n];
+                        for (int i = 0; i < n; i++)
+                            raw[i] = (ushort)(ib.Sum[i] / (ulong)ib.Count);
+
+                        var integrated = new ThermalFrame(
+                            acc.Width,
+                            acc.VisibleHeight,
+                            raw,
+                            gray8: null,
+                            metaU16: null,
+                            metaRows: 0);
+
+                        double tMid =
+                            sw.Elapsed.TotalSeconds -
+                            integrationTime.Value.TotalSeconds * 0.5;
+
+                        acc.AddFrame(integrated, tMid, _stimulusOn, xSelector);
+                        Interlocked.Increment(ref _frameCount);
+
+                        ib.Reset();
+                    }
                 }
-                catch
-                {
-                    // keine Exceptions aus Event-Thread rauswerfen
-                }
+                catch { }
             };
+
 
             _camera.FrameReceived += handler;
 
@@ -95,6 +170,7 @@ namespace ThermalCamLib.LockIn
                 await toggleTask;
 
                 // Ergebnis
+                await progressTask.ConfigureAwait(false);
                 return new LockInResult(acc, duration, frequencyHz);
             }
             finally
@@ -103,6 +179,28 @@ namespace ThermalCamLib.LockIn
                 try { await stimulus.TurnOffAsync(CancellationToken.None); } catch { /* ignore */ }
             }
         }
+
+        private sealed class IntegrationBuffer
+        {
+            public ulong[] Sum;
+            public int Count;
+            public DateTime T0;
+
+            public IntegrationBuffer(int nPix)
+            {
+                Sum = new ulong[nPix];
+                Reset();
+            }
+
+            public void Reset()
+            {
+                Array.Clear(Sum, 0, Sum.Length);
+                Count = 0;
+                T0 = DateTime.UtcNow;
+            }
+        }
+
+
 
         private static async Task ToggleStimulusAsync(
             IStimulusController stimulus,

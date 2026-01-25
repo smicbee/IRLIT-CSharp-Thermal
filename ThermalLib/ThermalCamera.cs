@@ -1,5 +1,7 @@
 ﻿using DirectShowLib;
 using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -44,6 +46,8 @@ namespace ThermalCamLib
 
         public int Width => _width;
         public int Height => _height;
+
+        public List<int> Hotpixels { get; set; } = new List<int>();
 
         public event EventHandler<ThermalFrame> FrameReceived;
         public int MetaRows { get; } = 4;            // Default: 4
@@ -206,6 +210,11 @@ namespace ThermalCamLib
             var raw = new ushort[pixelCount];
             Buffer.BlockCopy(buffer, 0, raw, 0, neededBytes);
 
+
+            if (Hotpixels != null) { 
+                raw = RemoveHotPixels(raw, Hotpixels);
+            }
+
             // Optional: 8-bit Preview (simple min/max stretch)
             var gray8 = new byte[pixelCount];
             ushort min = ushort.MaxValue, max = 0;
@@ -228,6 +237,61 @@ namespace ThermalCamLib
             var frame = new ThermalFrame(_width, _height, raw, gray8, metaU16: null);
             FrameReceived?.Invoke(this, frame);
         }
+
+
+        private ushort[] RemoveHotPixels(ushort[] raw, List<int> hotpixelIndices)
+        {
+            if (raw == null) throw new ArgumentNullException(nameof(raw));
+            if (hotpixelIndices == null || hotpixelIndices.Count == 0) return raw;
+
+            int w = _width;
+            int h = _height;
+            int n = w * h;
+            if (raw.Length != n) return raw;
+
+            // Optional: Kopie (damit Nachbarwerte nicht durch vorherige Korrekturen verfälscht werden)
+            var src = raw;
+            var dst = (ushort[])raw.Clone();
+
+            ushort[] nb = new ushort[8];
+
+            foreach (int i in hotpixelIndices)
+            {
+                if (i < 0 || i >= n) continue;
+
+                int x = i % w;
+                int y = i / w;
+
+                // Rand: nimm einen einfachen Ersatz (z.B. rechts oder unten, falls vorhanden)
+                if (x == 0 || x == w - 1 || y == 0 || y == h - 1)
+                {
+                    int j = (x + 1 < w) ? i + 1 : (x - 1 >= 0 ? i - 1 : i);
+                    dst[i] = src[j];
+                    continue;
+                }
+
+                // 8 Nachbarn sammeln (3x3 ohne Zentrum)
+                int idx = 0;
+                int row = y * w;
+
+                nb[idx++] = src[row - w + (x - 1)];
+                nb[idx++] = src[row - w + x];
+                nb[idx++] = src[row - w + (x + 1)];
+
+                nb[idx++] = src[row + (x - 1)];
+                nb[idx++] = src[row + (x + 1)];
+
+                nb[idx++] = src[row + w + (x - 1)];
+                nb[idx++] = src[row + w + x];
+                nb[idx++] = src[row + w + (x + 1)];
+
+                Array.Sort(nb);
+                dst[i] = nb[4]; // Median der 8 Werte (oben ist das "obere Median" – passt hier gut)
+            }
+
+            return dst;
+        }
+
 
         public void Dispose()
         {
@@ -292,6 +356,7 @@ namespace ThermalCamLib
 
         public async Task<ThermalFrame> CaptureDarkFrameAsync(int keepClosedMs = 800, int timeoutMs = 1500)
         {
+            Start();
             // Shutter schließen und kurz stabilisieren
             CloseShutter(keepClosedMs: keepClosedMs);
 
@@ -300,10 +365,55 @@ namespace ThermalCamLib
 
             // Shutter wieder "auf": bei vielen Geräten reicht es, NICHT weiter 0x8000 zu senden.
             // Optional: TriggerFfc(); (falls das bei deinem Modell den Normalbetrieb sauber macht)
+            
+            
+            
             return dark;
+
         }
 
 
+        public async Task<ThermalFrame> AcquireSumAsync(
+    TimeSpan duration,
+    int metaRows,
+    Func<ThermalFrame, ThermalFrame> preprocess = null,
+    bool normalizeToU16 = false,
+    CancellationToken ct = default)
+        {
+            
+            if (duration <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(duration));
+
+            var acc = new FrameAccumulator(Width, Height, metaRows);
+
+            EventHandler<ThermalFrame> handler = null;
+            handler = (s, f) =>
+            {
+                try
+                {
+                    if (preprocess != null) f = preprocess(f);
+                    acc.Add(f);
+                }
+                catch { }
+            };
+
+            FrameReceived += handler;
+
+            try
+            {
+                Start();
+                await Task.Delay(duration, ct);
+
+                if (acc.Count == 0)
+                    throw new TimeoutException("Während Acquire wurden keine Frames empfangen.");
+
+                return acc.BuildFrame(normalizeToU16);
+            }
+            finally
+            {
+                Stop();
+                FrameReceived -= handler;
+            }
+        }
 
     }
 

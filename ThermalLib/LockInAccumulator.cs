@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Drawing.Imaging;
 
 namespace ThermalCamLib.LockIn
 {
@@ -160,11 +162,47 @@ namespace ThermalCamLib.LockIn
             _n++;
         }
 
-        /// <summary>
-        /// Für Winkel (Grad): nimmt den passenden Phase-Bin und liefert (MeanOn - MeanOff) als Frame.
-        /// angleDeg bezieht sich auf die Zeitphase 0..360° (phi = 2π f t).
-        /// </summary>
-        public ThermalFrame GetFrameAtAngle_OnMinusOffShifted(
+
+        public Dictionary<double, ThermalFrame> GetAllAngleFrames(
+    bool shiftedOnOff = true,
+    bool useMean = true,
+    int exportMaxAngleDeg = 180,              // 180 reicht (siehe vorher)
+    ThermalCamLib.ThermalFrame.ColorMapType? colormap = null,
+    bool autoContrast = true,
+    ushort fixedMin = 0,
+    ushort fixedMax = 65535)
+        {
+
+            // Sinnvoll: pro Bin genau ein Winkel, sonst sind viele Winkel gleich
+            // Winkelmitte je Bin (0..180)
+            int binsToExport = Math.Min(_bins, (int)Math.Round(_bins * (exportMaxAngleDeg / 360.0)) * 2);
+            // einfacher: exportiere alle Bins und begrenze später per Winkel
+
+            Dictionary<double, ThermalFrame> outDict = new Dictionary<double, ThermalFrame>();
+
+            for (int b = 0; b < _bins; b++)
+            {
+                // Bin-Mitte in Grad
+                double angle = (b + 0.5) * 360.0 / _bins;
+
+                if (angle >= exportMaxAngleDeg + 1e-9) continue; // 0..180
+
+                ThermalFrame frame = shiftedOnOff
+                    ? GetFrameAtAngle(angle, useMean: useMean)
+                    : GetFrameAtAngle(angle, useMean: useMean);
+
+                outDict.Add(angle, frame);
+
+            }
+
+            return outDict;
+        }
+
+            /// <summary>
+            /// Für Winkel (Grad): nimmt den passenden Phase-Bin und liefert (MeanOn - MeanOff) als Frame.
+            /// angleDeg bezieht sich auf die Zeitphase 0..360° (phi = 2π f t).
+            /// </summary>
+            public ThermalFrame GetFrameAtAngle(
            double angleDeg,
            bool useMean = true,
            double? signalMin = null,
@@ -385,5 +423,15 @@ namespace ThermalCamLib.LockIn
 
     }
 
+    public sealed class LockInProgress
+    {
+        public TimeSpan Elapsed { get; set; }
+        public TimeSpan Total { get; set; }
+        public double Percent => Total.TotalMilliseconds <= 0 ? 0 : (Elapsed.TotalMilliseconds / Total.TotalMilliseconds) * 100.0;
+
+        public int Frames { get; set; }
+        public bool StimulusOn { get; set; }
+        public double FrequencyHz { get; set; }
+    }
 
 }
