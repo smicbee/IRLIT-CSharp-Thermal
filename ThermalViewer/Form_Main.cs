@@ -328,18 +328,30 @@ namespace ThermalViewer
                 {
                     if (!_lockInSeriesMin.HasValue || !_lockInSeriesMax.HasValue)
                     {
-                        var range = lockinResult.Accumulator.GetSeriesSignalRange();
-                        _lockInSeriesMin = range.Min;
-                        _lockInSeriesMax = range.Max;
+                        var r = lockinResult.Accumulator.GetSeriesSignalRange();
+                        _lockInSeriesMin = r.Min;
+                        _lockInSeriesMax = r.Max;
                     }
+
+                    double mn = _lockInSeriesMin.Value;
+                    double mx = _lockInSeriesMax.Value;
+
+                    double offset = -mn;
+                    double scale = 65535.0 / (mx - mn);
 
                     var frame = lockinResult.Accumulator.GetFrameAtAngle(
                         degree,
-                        signalMin: _lockInSeriesMin,
-                        signalMax: _lockInSeriesMax);
+                        useMean: true,
+                        offset: offset,
+                        scale: scale);
+
+                    pictureBox1.Image = frame.ToColorMappedImage(
+                        (ThermalFrame.ColorMapType)comboBoxColorMap.SelectedItem,
+                        autoContrast: false,
+                        min: 0,
+                        max: 65535);
+
                     _lastFrame = frame;
-                    pictureBox1.Image= frame.ToColorMappedImage((ThermalFrame.ColorMapType)comboBoxColorMap.SelectedItem);
-                    pictureBox1.Invalidate();
                 }
                 catch { }
             }
@@ -528,11 +540,10 @@ namespace ThermalViewer
 
             try
             {
-                var phaseimg = lockinResult.Accumulator.GetPhaseFrame(maskLowAmplitude: true, amplitudeThreshold: 50);
-                _lastFrame = phaseimg;
-                var colormappedImg = phaseimg.ToColorMappedImage((ThermalFrame.ColorMapType)comboBoxColorMap.SelectedItem);
-                showImage(colormappedImg);
-        }
+                var phaseimg = lockinResult.Accumulator.GetPhaseFrame();
+                _lastFrame = phaseimg;                
+               showImage(phaseimg.ToColorMappedImage((ThermalFrame.ColorMapType)comboBoxColorMap.SelectedItem));
+            }
             catch
             {
                 return;

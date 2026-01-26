@@ -6,6 +6,7 @@ using ThermalCamLib.LockIn;
 
 public static class LockInPhaseImaging
 {
+ 
     public static Bitmap CreatePhaseHueBitmap(
         LockInAccumulator acc,
         bool normalize = true,

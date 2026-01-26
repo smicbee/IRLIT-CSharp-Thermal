@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Drawing.Imaging;
 
 namespace ThermalCamLib.LockIn
@@ -78,6 +79,109 @@ namespace ThermalCamLib.LockIn
         public int SampleCount => _n;
         public double FrequencyHz => _fHz;
         public int PhaseBins => _bins;
+
+
+
+
+
+        public Bitmap GetPhaseColorImage(
+    bool normalize = true,
+    double ampFloor = 0.0,        // ab hier fängt Sichtbarkeit an
+    double ampCeil = 0.0)         // 0 = auto (max)
+        {
+            int w = _w;
+            int h = VisibleHeight;
+            int nPix = PixelCount;
+
+            double norm = normalize ? (2.0 / _n) : 1.0;
+
+            // Amplitude max bestimmen, falls ampCeil nicht gesetzt
+            double maxAmp = 0;
+            for (int i = 0; i < nPix; i++)
+            {
+                double I = norm * _I[i];
+                double Q = norm * _Q[i];
+                double a = Math.Sqrt(I * I + Q * Q);
+                if (a > maxAmp) maxAmp = a;
+            }
+            if (ampCeil <= 0) ampCeil = maxAmp;
+
+            var bmp = new Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            var rect = new System.Drawing.Rectangle(0, 0, w, h);
+            var data = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.WriteOnly, bmp.PixelFormat);
+
+            try
+            {
+                unsafe
+                {
+                    byte* dst = (byte*)data.Scan0;
+                    int stride = data.Stride;
+
+                    for (int y = 0; y < h; y++)
+                    {
+                        byte* row = dst + y * stride;
+                        int baseIdx = y * w;
+
+                        for (int x = 0; x < w; x++)
+                        {
+                            int i = baseIdx + x;
+
+                            double I = norm * _I[i];
+                            double Q = norm * _Q[i];
+
+                            double amp = Math.Sqrt(I * I + Q * Q);
+                            double phi = Math.Atan2(Q, I);        // [-pi..pi]
+                            double hue = (phi + Math.PI) * 180.0 / Math.PI; // [0..360]
+
+                            // value (brightness) aus Amplitude
+                            double v = (amp - ampFloor) / Math.Max(1e-12, (ampCeil - ampFloor));
+                            if (v < 0) v = 0;
+                            if (v > 1) v = 1;
+
+                            var c = ColorMaps_HsvToRgb(hue, 1.0, v); // v dimmt
+
+                            int p = x * 3;
+                            row[p + 0] = c.B;
+                            row[p + 1] = c.G;
+                            row[p + 2] = c.R;
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                bmp.UnlockBits(data);
+            }
+
+            return bmp;
+        }
+
+        private static System.Drawing.Color ColorMaps_HsvToRgb(double h, double s, double v)
+        {
+            h = (h % 360 + 360) % 360;
+            double c = v * s;
+            double x = c * (1 - Math.Abs((h / 60) % 2 - 1));
+            double m = v - c;
+
+            double r = 0, g = 0, b = 0;
+            if (h < 60) { r = c; g = x; }
+            else if (h < 120) { r = x; g = c; }
+            else if (h < 180) { g = c; b = x; }
+            else if (h < 240) { g = x; b = c; }
+            else if (h < 300) { r = x; b = c; }
+            else { r = c; b = x; }
+
+            return System.Drawing.Color.FromArgb(
+                (int)((r + m) * 255),
+                (int)((g + m) * 255),
+                (int)((b + m) * 255));
+        }
+
+
+
+
+
+
 
         public void Reset(double? t0Seconds = null)
         {
@@ -164,80 +268,94 @@ namespace ThermalCamLib.LockIn
 
 
         public Dictionary<double, ThermalFrame> GetAllAngleFrames(
-    bool shiftedOnOff = true,
-    bool useMean = true,
-    int exportMaxAngleDeg = 180,              // 180 reicht (siehe vorher)
-    ThermalCamLib.ThermalFrame.ColorMapType? colormap = null,
-    bool autoContrast = true,
-    ushort fixedMin = 0,
-    ushort fixedMax = 65535)
+           bool shiftedOnOff = true,
+           bool useMean = true,
+           int exportMaxAngleDeg = 180)
         {
+            if (_n <= 0) throw new InvalidOperationException("Keine Samples im LockInAccumulator.");
 
-            // Sinnvoll: pro Bin genau ein Winkel, sonst sind viele Winkel gleich
-            // Winkelmitte je Bin (0..180)
-            int binsToExport = Math.Min(_bins, (int)Math.Round(_bins * (exportMaxAngleDeg / 360.0)) * 2);
-            // einfacher: exportiere alle Bins und begrenze später per Winkel
+            // globaler Signalbereich (damit alle Frames gleich skaliert sind)
+            var range = GetSeriesSignalRange(useMean: useMean);
+            double seriesMin = range.Min;
+            double seriesMax = range.Max;
 
-            Dictionary<double, ThermalFrame> outDict = new Dictionary<double, ThermalFrame>();
+            var outDict = new Dictionary<double, ThermalFrame>();
 
             for (int b = 0; b < _bins; b++)
             {
                 // Bin-Mitte in Grad
                 double angle = (b + 0.5) * 360.0 / _bins;
 
-                if (angle >= exportMaxAngleDeg + 1e-9) continue; // 0..180
+                // nur 0..exportMaxAngleDeg (typisch 180)
+                if (angle > exportMaxAngleDeg + 1e-9) continue;
 
-                ThermalFrame frame = shiftedOnOff
-                    ? GetFrameAtAngle(angle, useMean: useMean)
-                    : GetFrameAtAngle(angle, useMean: useMean);
+                ThermalFrame frame;
 
-                outDict.Add(angle, frame);
 
+                double offset = -seriesMin;
+                double scale = 65535.0 / (seriesMax - seriesMin);
+
+                if (shiftedOnOff)
+                {
+                    // ON bei angle, OFF bei angle+180 (deine GetFrameAtAngle macht das bereits)
+                    frame = GetFrameAtAngle(
+                        angleDeg: angle,
+                        useMean: useMean,
+                        offset: offset,
+                        scale: scale);
+                }
+                else
+                {
+                    // aktuell hast du keine "nicht-shifted" Methode – fallback = dasselbe
+                    frame = GetFrameAtAngle(
+                        angleDeg: angle,
+                        useMean: useMean,
+                        offset: offset,
+                        scale: scale);
+                }
+
+                // key eindeutig halten (Dictionary mag keine Duplikate durch Rundung)
+                // falls du später exportMaxAngleDeg/phaseBins änderst
+                if (!outDict.ContainsKey(angle))
+                    outDict.Add(angle, frame);
             }
 
             return outDict;
         }
 
-            /// <summary>
-            /// Für Winkel (Grad): nimmt den passenden Phase-Bin und liefert (MeanOn - MeanOff) als Frame.
-            /// angleDeg bezieht sich auf die Zeitphase 0..360° (phi = 2π f t).
-            /// </summary>
-            public ThermalFrame GetFrameAtAngle(
-           double angleDeg,
-           bool useMean = true,
-           double? signalMin = null,
-           double? signalMax = null)
-        {
-            if (_n <= 0) throw new InvalidOperationException("Keine Samples im LockInAccumulator.");
 
-            // angle in [0..360)
+
+
+        /// <summary>
+        /// Für Winkel (Grad): nimmt den passenden Phase-Bin und liefert (MeanOn - MeanOff) als Frame.
+        /// angleDeg bezieht sich auf die Zeitphase 0..360° (phi = 2π f t).
+        /// </summary>
+        public ThermalFrame GetFrameAtAngle(
+       double angleDeg,
+    bool useMean = true,
+    double offset = 32768.0,     // damit negative Werte darstellbar werden
+    double scale = 1.0)          // optional, um den Kontrast zu erhöhen
+        {
+            if (_n <= 0) throw new InvalidOperationException("Keine Samples.");
+
             double aOn = angleDeg % 360.0;
             if (aOn < 0) aOn += 360.0;
 
-            // OFF ist 180° versetzt
             double aOff = (aOn + 180.0) % 360.0;
 
             int binOn = (int)(aOn / 360.0 * _bins);
             int binOff = (int)(aOff / 360.0 * _bins);
 
-            if (binOn < 0) binOn = 0;
             if (binOn >= _bins) binOn = _bins - 1;
-            if (binOff < 0) binOff = 0;
             if (binOff >= _bins) binOff = _bins - 1;
-
-            int nPix = PixelCount;
 
             int nOn = _cntOn[binOn];
             int nOff = _cntOff[binOff];
-
             if (nOn == 0 || nOff == 0)
-                throw new InvalidOperationException(
-                    $"Zu wenige Samples: ON@{aOn:F1}° bin {binOn} (ON={nOn}), OFF@{aOff:F1}° bin {binOff} (OFF={nOff}).");
+                throw new InvalidOperationException("Zu wenige Samples.");
 
-            var diff = new double[nPix];
-
-            double min = double.PositiveInfinity;
-            double max = double.NegativeInfinity;
+            int nPix = PixelCount;
+            var raw = new ushort[nPix];
 
             for (int i = 0; i < nPix; i++)
             {
@@ -250,30 +368,10 @@ namespace ThermalCamLib.LockIn
                     off /= nOff;
                 }
 
-                double v = on - off;
-                diff[i] = v;
-                if (v < min) min = v;
-                if (v > max) max = v;
-            }
-
-            double lo = signalMin ?? min;
-            double hi = signalMax ?? max;
-            double range = hi - lo;
-
-            if (range <= 1e-12)
-            {
-                var flat = new ushort[nPix];
-                for (int i = 0; i < nPix; i++) flat[i] = 32768;
-                return new ThermalFrame(_w, VisibleHeight, flat, gray8: null, metaU16: null, metaRows: 0);
-            }
-
-            var raw = new ushort[nPix];
-            for (int i = 0; i < nPix; i++)
-            {
-                double f = (diff[i] - lo) / range;
-                if (f <= 0) raw[i] = 0;
-                else if (f >= 1) raw[i] = 65535;
-                else raw[i] = (ushort)(f * 65535.0);
+                double v = (on - off) * scale + offset; // diff -> U16 space
+                if (v < 0) v = 0;
+                if (v > 65535) v = 65535;
+                raw[i] = (ushort)(v + 0.5);
             }
 
             return new ThermalFrame(_w, VisibleHeight, raw, gray8: null, metaU16: null, metaRows: 0);
