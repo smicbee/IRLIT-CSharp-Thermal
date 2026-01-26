@@ -381,6 +381,57 @@ namespace ThermalCamLib.LockIn
             return new ThermalFrame(w, h, raw, gray8: null, metaU16: null, metaRows: 0);
         }
 
+        public (double Min, double Max) GetSeriesSignalRange(bool useMean = true)
+        {
+            if (_n <= 0) throw new InvalidOperationException("Keine Samples im LockInAccumulator.");
+
+            int nPix = PixelCount;
+            double globalMin = double.PositiveInfinity;
+            double globalMax = double.NegativeInfinity;
+            bool any = false;
+
+            for (int binOn = 0; binOn < _bins; binOn++)
+            {
+                double angle = (binOn + 0.5) * 360.0 / _bins;
+                double aOff = (angle + 180.0) % 360.0;
+
+                int binOff = (int)(aOff / 360.0 * _bins);
+                if (binOff < 0) binOff = 0;
+                if (binOff >= _bins) binOff = _bins - 1;
+
+                int nOn = _cntOn[binOn];
+                int nOff = _cntOff[binOff];
+
+                if (nOn == 0 || nOff == 0)
+                {
+                    continue;
+                }
+
+                any = true;
+
+                for (int i = 0; i < nPix; i++)
+                {
+                    double on = _sumOn[binOn][i];
+                    double off = _sumOff[binOff][i];
+
+                    if (useMean)
+                    {
+                        on /= nOn;
+                        off /= nOff;
+                    }
+
+                    double v = on - off;
+                    if (v < globalMin) globalMin = v;
+                    if (v > globalMax) globalMax = v;
+                }
+            }
+
+            if (!any)
+                throw new InvalidOperationException("Zu wenige Samples für die Serien-Normalisierung.");
+
+            return (globalMin, globalMax);
+        }
+
         public ThermalFrame GetPhaseFrame(
     bool normalize = true,
     bool maskLowAmplitude = false,
