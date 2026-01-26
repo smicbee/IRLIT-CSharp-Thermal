@@ -304,35 +304,7 @@ namespace ThermalViewer
         }
 
 
-        public async Task DoLockInAsync(ThermalCamera cam, DarkFieldCorrector darkCorr)
-        {
-            var runner = new LockInMeasurementRunner(cam);
-            var stimulus = new ConsoleStimulusController();
 
-            // optional: preprocess (darkfield)
-            Func<ThermalFrame, ThermalFrame> preprocess = f => darkCorr.Apply(f);
-
-            // xSelector: Raw verwenden (oder raw -> °C wenn dein converter performant ist)
-            Func<ushort, double> xsel = raw => raw;
-
-            var res = await runner.RunAsync(
-                stimulus: stimulus,
-                frequencyHz: 1.0,
-                duration: TimeSpan.FromSeconds(10),
-                metaRows: 4,
-                dutyCycle: 0.5,
-                settleBeforeStart: TimeSpan.FromSeconds(1),
-                framePreprocess: preprocess,
-                xSelector: xsel,
-                ct: CancellationToken.None
-            );
-
-            // Auswertung:
-            var amp = res.Accumulator.GetAmplitude(normalize: true);
-            var phase = res.Accumulator.GetPhase();
-
-            // -> daraus kannst du jetzt wieder ein 8-bit Bild machen (amp auto-contrast etc.)
-        }
 
         private void hScrollBar1_Scroll(object sender, ScrollEventArgs e)
         {
