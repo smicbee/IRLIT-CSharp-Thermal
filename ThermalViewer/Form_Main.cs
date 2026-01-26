@@ -326,7 +326,17 @@ namespace ThermalViewer
             {
                 try
                 {
-                    var frame = lockinResult.Accumulator.GetFrameAtAngle(degree);
+                    if (!_lockInSeriesMin.HasValue || !_lockInSeriesMax.HasValue)
+                    {
+                        var range = lockinResult.Accumulator.GetSeriesSignalRange();
+                        _lockInSeriesMin = range.Min;
+                        _lockInSeriesMax = range.Max;
+                    }
+
+                    var frame = lockinResult.Accumulator.GetFrameAtAngle(
+                        degree,
+                        signalMin: _lockInSeriesMin,
+                        signalMax: _lockInSeriesMax);
                     _lastFrame = frame;
                     pictureBox1.Image= frame.ToColorMappedImage((ThermalFrame.ColorMapType)comboBoxColorMap.SelectedItem);
                     pictureBox1.Invalidate();
@@ -337,6 +347,8 @@ namespace ThermalViewer
         private ThermalFrame.ColorMapType _selectedMap = ThermalFrame.ColorMapType.Iron;
         private ThermalFrame _lastFrame;
         private readonly object _frameLock = new object();
+        private double? _lockInSeriesMin;
+        private double? _lockInSeriesMax;
 
         public void startLiveView()
         {
@@ -473,6 +485,8 @@ namespace ThermalViewer
                 var result = await ((Task<LockInResult>)_lockInTask);
 
                 lockinResult = result;
+                _lockInSeriesMin = null;
+                _lockInSeriesMax = null;
 
                 ConfigureLockInSlider();
                 hScrollBar1.Enabled = true;
