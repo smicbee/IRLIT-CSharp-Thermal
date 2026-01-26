@@ -2,7 +2,7 @@
 
 namespace ThermalViewer
 {
-    partial class Form1
+    partial class Form_Main
     {
         /// <summary>
         /// Erforderliche Designervariable.
@@ -60,9 +60,9 @@ namespace ThermalViewer
             this.hScrollBar1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.hScrollBar1.Enabled = false;
             this.hScrollBar1.LargeChange = 1;
-            this.hScrollBar1.Location = new System.Drawing.Point(527, 52);
+            this.hScrollBar1.Location = new System.Drawing.Point(966, 96);
             this.hScrollBar1.Name = "hScrollBar1";
-            this.hScrollBar1.Size = new System.Drawing.Size(255, 25);
+            this.hScrollBar1.Size = new System.Drawing.Size(468, 25);
             this.hScrollBar1.TabIndex = 0;
             this.hScrollBar1.Scroll += new System.Windows.Forms.ScrollEventHandler(this.hScrollBar1_Scroll);
             // 
@@ -70,9 +70,10 @@ namespace ThermalViewer
             // 
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(471, 59);
+            this.label1.Location = new System.Drawing.Point(864, 109);
+            this.label1.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(50, 13);
+            this.label1.Size = new System.Drawing.Size(92, 25);
             this.label1.TabIndex = 1;
             this.label1.Text = "0° Phase";
             // 
@@ -81,18 +82,20 @@ namespace ThermalViewer
             this.pictureBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.pictureBox1.Location = new System.Drawing.Point(16, 111);
+            this.pictureBox1.Location = new System.Drawing.Point(29, 205);
+            this.pictureBox1.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(766, 432);
+            this.pictureBox1.Size = new System.Drawing.Size(1404, 798);
             this.pictureBox1.TabIndex = 2;
             this.pictureBox1.TabStop = false;
             // 
             // button1
             // 
             this.button1.BackColor = System.Drawing.Color.Yellow;
-            this.button1.Location = new System.Drawing.Point(16, 13);
+            this.button1.Location = new System.Drawing.Point(29, 24);
+            this.button1.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(95, 29);
+            this.button1.Size = new System.Drawing.Size(174, 54);
             this.button1.TabIndex = 3;
             this.button1.Text = "Live";
             this.button1.UseVisualStyleBackColor = false;
@@ -101,9 +104,10 @@ namespace ThermalViewer
             // button2
             // 
             this.button2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.button2.Location = new System.Drawing.Point(465, 13);
+            this.button2.Location = new System.Drawing.Point(852, 24);
+            this.button2.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(95, 29);
+            this.button2.Size = new System.Drawing.Size(174, 54);
             this.button2.TabIndex = 4;
             this.button2.Text = "LockIn Record";
             this.button2.UseVisualStyleBackColor = false;
@@ -112,9 +116,10 @@ namespace ThermalViewer
             // button3
             // 
             this.button3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.button3.Location = new System.Drawing.Point(687, 13);
+            this.button3.Location = new System.Drawing.Point(1260, 24);
+            this.button3.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(95, 29);
+            this.button3.Size = new System.Drawing.Size(174, 54);
             this.button3.TabIndex = 5;
             this.button3.Text = "Amplitude";
             this.button3.UseVisualStyleBackColor = true;
@@ -124,9 +129,10 @@ namespace ThermalViewer
             // 
             this.button4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.button4.Enabled = false;
-            this.button4.Location = new System.Drawing.Point(586, 13);
+            this.button4.Location = new System.Drawing.Point(1074, 24);
+            this.button4.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.button4.Name = "button4";
-            this.button4.Size = new System.Drawing.Size(95, 29);
+            this.button4.Size = new System.Drawing.Size(174, 54);
             this.button4.TabIndex = 6;
             this.button4.Text = "Phase";
             this.button4.UseVisualStyleBackColor = true;
@@ -134,9 +140,10 @@ namespace ThermalViewer
             // 
             // button5
             // 
-            this.button5.Location = new System.Drawing.Point(16, 48);
+            this.button5.Location = new System.Drawing.Point(29, 89);
+            this.button5.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.button5.Name = "button5";
-            this.button5.Size = new System.Drawing.Size(95, 29);
+            this.button5.Size = new System.Drawing.Size(174, 54);
             this.button5.TabIndex = 7;
             this.button5.Text = "Dark Correction";
             this.button5.UseVisualStyleBackColor = true;
@@ -145,24 +152,27 @@ namespace ThermalViewer
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(13, 541);
+            this.label2.Location = new System.Drawing.Point(24, 999);
+            this.label2.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(0, 13);
+            this.label2.Size = new System.Drawing.Size(0, 25);
             this.label2.TabIndex = 8;
             // 
             // comboBoxColorMap
             // 
             this.comboBoxColorMap.FormattingEnabled = true;
-            this.comboBoxColorMap.Location = new System.Drawing.Point(16, 84);
+            this.comboBoxColorMap.Location = new System.Drawing.Point(29, 155);
+            this.comboBoxColorMap.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.comboBoxColorMap.Name = "comboBoxColorMap";
-            this.comboBoxColorMap.Size = new System.Drawing.Size(180, 21);
+            this.comboBoxColorMap.Size = new System.Drawing.Size(327, 32);
             this.comboBoxColorMap.TabIndex = 9;
             // 
             // button6
             // 
-            this.button6.Location = new System.Drawing.Point(117, 48);
+            this.button6.Location = new System.Drawing.Point(214, 89);
+            this.button6.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.button6.Name = "button6";
-            this.button6.Size = new System.Drawing.Size(95, 29);
+            this.button6.Size = new System.Drawing.Size(174, 54);
             this.button6.TabIndex = 10;
             this.button6.Text = "Correction";
             this.button6.UseVisualStyleBackColor = true;
@@ -171,9 +181,10 @@ namespace ThermalViewer
             // button7
             // 
             this.button7.BackColor = System.Drawing.Color.White;
-            this.button7.Location = new System.Drawing.Point(117, 13);
+            this.button7.Location = new System.Drawing.Point(214, 24);
+            this.button7.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.button7.Name = "button7";
-            this.button7.Size = new System.Drawing.Size(95, 29);
+            this.button7.Size = new System.Drawing.Size(174, 54);
             this.button7.TabIndex = 11;
             this.button7.Text = "Acquire";
             this.button7.UseVisualStyleBackColor = false;
@@ -181,14 +192,15 @@ namespace ThermalViewer
             // 
             // numericUpDown1
             // 
-            this.numericUpDown1.Location = new System.Drawing.Point(218, 19);
+            this.numericUpDown1.Location = new System.Drawing.Point(400, 35);
+            this.numericUpDown1.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.numericUpDown1.Maximum = new decimal(new int[] {
             100000,
             0,
             0,
             0});
             this.numericUpDown1.Name = "numericUpDown1";
-            this.numericUpDown1.Size = new System.Drawing.Size(65, 20);
+            this.numericUpDown1.Size = new System.Drawing.Size(119, 29);
             this.numericUpDown1.TabIndex = 12;
             this.numericUpDown1.Value = new decimal(new int[] {
             1000,
@@ -199,9 +211,10 @@ namespace ThermalViewer
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(289, 21);
+            this.label3.Location = new System.Drawing.Point(530, 39);
+            this.label3.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(20, 13);
+            this.label3.Size = new System.Drawing.Size(38, 25);
             this.label3.TabIndex = 13;
             this.label3.Text = "ms";
             // 
@@ -209,27 +222,30 @@ namespace ThermalViewer
             // 
             this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(215, 87);
+            this.label4.Location = new System.Drawing.Point(394, 161);
+            this.label4.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(39, 13);
+            this.label4.Size = new System.Drawing.Size(72, 25);
             this.label4.TabIndex = 14;
             this.label4.Text = "Focus:";
             // 
             // progressBar1
             // 
             this.progressBar1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.progressBar1.Location = new System.Drawing.Point(260, 82);
+            this.progressBar1.Location = new System.Drawing.Point(477, 151);
+            this.progressBar1.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.progressBar1.Maximum = 500;
             this.progressBar1.Name = "progressBar1";
-            this.progressBar1.Size = new System.Drawing.Size(179, 23);
+            this.progressBar1.Size = new System.Drawing.Size(328, 42);
             this.progressBar1.TabIndex = 15;
             // 
             // button8
             // 
             this.button8.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.button8.Location = new System.Drawing.Point(675, 547);
+            this.button8.Location = new System.Drawing.Point(1238, 1010);
+            this.button8.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.button8.Name = "button8";
-            this.button8.Size = new System.Drawing.Size(107, 39);
+            this.button8.Size = new System.Drawing.Size(196, 72);
             this.button8.TabIndex = 16;
             this.button8.Text = "Save";
             this.button8.UseVisualStyleBackColor = true;
@@ -238,9 +254,10 @@ namespace ThermalViewer
             // button9
             // 
             this.button9.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.button9.Location = new System.Drawing.Point(449, 547);
+            this.button9.Location = new System.Drawing.Point(823, 1010);
+            this.button9.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.button9.Name = "button9";
-            this.button9.Size = new System.Drawing.Size(107, 39);
+            this.button9.Size = new System.Drawing.Size(196, 72);
             this.button9.TabIndex = 17;
             this.button9.Text = "Send to iFAcet";
             this.button9.UseVisualStyleBackColor = true;
@@ -250,9 +267,10 @@ namespace ThermalViewer
             // 
             this.button10.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.button10.Enabled = false;
-            this.button10.Location = new System.Drawing.Point(562, 547);
+            this.button10.Location = new System.Drawing.Point(1030, 1010);
+            this.button10.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.button10.Name = "button10";
-            this.button10.Size = new System.Drawing.Size(107, 39);
+            this.button10.Size = new System.Drawing.Size(196, 72);
             this.button10.TabIndex = 18;
             this.button10.Text = "Export Series";
             this.button10.UseVisualStyleBackColor = true;
@@ -262,29 +280,31 @@ namespace ThermalViewer
             // 
             this.exportWithColormap.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.exportWithColormap.AutoSize = true;
-            this.exportWithColormap.Location = new System.Drawing.Point(675, 585);
+            this.exportWithColormap.Location = new System.Drawing.Point(1243, 1082);
+            this.exportWithColormap.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.exportWithColormap.Name = "exportWithColormap";
-            this.exportWithColormap.Size = new System.Drawing.Size(103, 17);
+            this.exportWithColormap.Size = new System.Drawing.Size(184, 29);
             this.exportWithColormap.TabIndex = 19;
             this.exportWithColormap.Text = "Export Colormap";
             this.exportWithColormap.UseVisualStyleBackColor = true;
             // 
             // button11
             // 
-            this.button11.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.button11.Location = new System.Drawing.Point(16, 547);
+            this.button11.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.button11.Location = new System.Drawing.Point(29, 1010);
+            this.button11.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.button11.Name = "button11";
-            this.button11.Size = new System.Drawing.Size(107, 39);
+            this.button11.Size = new System.Drawing.Size(196, 72);
             this.button11.TabIndex = 20;
             this.button11.Text = "Settings";
             this.button11.UseVisualStyleBackColor = true;
             this.button11.Click += new System.EventHandler(this.button11_Click);
             // 
-            // Form1
+            // Form_Main
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 24F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(794, 600);
+            this.ClientSize = new System.Drawing.Size(1456, 1108);
             this.Controls.Add(this.button11);
             this.Controls.Add(this.exportWithColormap);
             this.Controls.Add(this.button10);
@@ -306,8 +326,8 @@ namespace ThermalViewer
             this.Controls.Add(this.pictureBox1);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.hScrollBar1);
-            this.Margin = new System.Windows.Forms.Padding(2);
-            this.Name = "Form1";
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Name = "Form_Main";
             this.Text = "Form1";
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();

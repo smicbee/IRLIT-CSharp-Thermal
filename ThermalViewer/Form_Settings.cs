@@ -17,9 +17,9 @@ namespace ThermalViewer
 {
     public partial class Form_Settings : Form
     {
-        Form1 mainForm;
+        Form_Main mainForm;
 
-        public Form_Settings(Form1 originalForm)
+        public Form_Settings(Form_Main originalForm)
         {
             mainForm = originalForm;
             InitializeComponent();
