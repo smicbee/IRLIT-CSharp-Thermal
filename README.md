@@ -2,6 +2,7 @@
 
 **ThermalCamLib** ist eine C#/.NET-Framework-Bibliothek zur Ansteuerung von UVC-Thermalkameras (z. B. HT301 / T2S+) inklusive  
 Live-View, Radiometric-Raw-Zugriff, Dark-Field-Korrektur, Bildaufbereitung und **Lock-In-Thermografie**.
+ThermalLib ist die allgemeine Bibliothek, die sich um das Ansteuern und Auswerten der Thermalbilder kümmert. ThermalViewer ist die Demo-Applikation, die alle implementierten Features in einer Win32 GUI abbildet. Optional gibt es noch einen Sketch für einen ESP32C6, der sich um die einfache Ansteuerung und Kommunikation zwischen ThermalLib und dem ESP32C6-GPIO Ports kümmert.
 
 Das Projekt richtet sich an Entwickler:innen und Forschungsanwendungen (NDT, Materialanalyse, Thermografie).
 
